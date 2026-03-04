@@ -1,4 +1,5 @@
-import { Test } from '../../ltng-testingtools/gotest.mjs'
+import ltngTest from '../../ltng-testingtools/ltng-test.mjs'
+const { Test } = ltngTest
 import {
 	kebabToLowerSnakeCase,
 	lowerCamelCaseToLowerCaseLowerKebabCase,

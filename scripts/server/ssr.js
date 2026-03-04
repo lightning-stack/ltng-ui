@@ -1,8 +1,9 @@
-const fs = require('fs')
-const path = require('path')
-const vm = require('vm')
-const { transpile, resolvePath } = require('../internal/transpiler')
-const mockDom = require('../../mocks/mock-dom') // Assuming this exists based on old script
+import fs from 'fs'
+import path from 'path'
+import vm from 'vm'
+import { transpile, resolvePath } from '../internal/transpiler.js'
+import mockDom from '../../mocks/mock-dom.js'
+import handleCSR from './csr.js'
 
 function renderFile(filePath, rootDir) {
     let content = fs.readFileSync(filePath, 'utf8')
@@ -264,9 +265,8 @@ function handleSSR(req, res, config) {
         // if the client needs to hydrate, it needs transpiled files if they are modules!
         // So we should use the CSR handler for assets.
         
-        const csrHandler = require('./csr')
-        csrHandler(req, res, config)
+        handleCSR(req, res, config)
     }
 }
 
-module.exports = { handleSSR, renderFile }
+export { handleSSR, renderFile }

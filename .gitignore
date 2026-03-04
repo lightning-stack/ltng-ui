@@ -2,6 +2,9 @@
 /dist
 /dst
 
+# Node modules
+node_modules/
+
 # MacOS folders
 .DS_Store
 

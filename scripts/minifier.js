@@ -1,9 +1,11 @@
-const fs = require('fs')
-const path = require('path')
-const { transpile, minify, resolvePath } = require('./internal/transpiler')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { transpile, minify, resolvePath } from './internal/transpiler.js'
+import { bundleCss } from './internal/css-bundler.js'
 
-const { bundleCss } = require('./internal/css-bundler')
-
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 const ROOT_DIR = path.resolve(__dirname, '..')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
 const COMPONENTS_DIR = path.join(ROOT_DIR, 'ltng-components')

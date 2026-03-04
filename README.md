@@ -24,7 +24,7 @@
 Include the framework in your HTML:
 
 ```html
-<script src="ltng-framework.js"></script>
+<script src="ltng-ui.js"></script>
 ```
 
 No build step required. Pure vanilla JavaScript.
@@ -293,12 +293,12 @@ Body.render(overlayModal({}, 'Notification'))
 
 > 📖 **Full details**: [docs/Design Overview.md](docs/Design%20Overview.md)
 
-The framework supports three rendering modes, all using the same `ltng-framework.js` code:
+The framework supports three rendering modes, all using the same `ltng-ui.js` code:
 
 ### Client-Side Rendering (CSR)
 
 ```bash
-node ltng-server.js --mode=csr --src=./app --port=3000
+bun scripts/ltng-ui-server.js --mode=csr --src=./app --port=3000
 ```
 
 | Step | What Happens |
@@ -312,7 +312,7 @@ node ltng-server.js --mode=csr --src=./app --port=3000
 ### Server-Side Rendering (SSR)
 
 ```bash
-node ltng-server.js --mode=ssr --src=./app --port=3000
+bun scripts/ltng-ui-server.js --mode=ssr --src=./app --port=3000
 ```
 
 | Step | What Happens |
@@ -329,10 +329,10 @@ node ltng-server.js --mode=ssr --src=./app --port=3000
 
 ```bash
 # Build
-node ltng-server.js --build --src=./app
+bun scripts/ltng-ui-server.js --build --src=./app
 
 # Serve
-node ltng-server.js --mode=ssg --src=./dist --port=3000
+bun scripts/ltng-ui-server.js --mode=ssg --src=./dist --port=3000
 ```
 
 | Step | What Happens |
@@ -377,8 +377,61 @@ This ensures the client creates a fresh, interactive DOM identical to server out
 | **ltng-tools** | i18n, HTTP transport, converters, random utils |
 | **ltng-testingtools** | Testing (Go-style & Gherkin) |
 | **ltng-book** | Component documentation tool |
-| **ltng-server** | CSR/SSR/SSG serving |
+| **ltng-ui-server** | CSR/SSR/SSG serving |
 | **mocks** | Mock DOM for SSR/SSG |
+
+---
+
+## Build Outputs
+
+All bundles are produced via [esbuild](https://esbuild.github.io/) (invoked through `npx`, no npm dependencies).
+
+| Bundle | Contents | Size |
+|--------|----------|------|
+| `ltng-ui-all.esbuild.min.js` | Everything — ui + components + tools + testingtools + book | 20K |
+| `ltng-ui-server.min.js` | Dev server (CSR/SSR/SSG) | 17K |
+| `ltng-components.esbuild.min.js` | Components only (button, card, form, etc.) | 9.5K |
+| `ltng-ui-all.min.css` | All `ltng-components` CSS concatenated + minified (`theme.css` first) | 5.3K |
+| `ltng-ui.esbuild.min.js` | Core framework only (`ltng-ui.js`) | 3.6K |
+| `ltng-testingtools.esbuild.min.js` | Testing tools only | 3.4K |
+| `ltng-tools.esbuild.min.js` | Utility tools only (converter, i18n, random, transport) | 2.6K |
+
+### Target → Output Mapping
+
+| Target | Output | Size |
+|--------|--------|------|
+| `bundle-css` | `build/ltng-ui-all.min.css` | 5.3K |
+| `bundle-all` | `build/ltng-ui-all.esbuild.min.js` | 20K |
+| `bundle-ui-server` | `build/ltng-ui-server.min.js` | 17K |
+| `bundle-ltng-ui` | `build/ltng-ui.esbuild.min.js` | 3.6K |
+| `bundle-ltng-components` | `build/ltng-components.esbuild.min.js` | 9.5K |
+| `bundle-ltng-tools` | `build/ltng-tools.esbuild.min.js` | 2.6K |
+| `bundle-ltng-testingtools` | `build/ltng-testingtools.esbuild.min.js` | 3.4K |
+| `bundle-ui` _(unified)_ | All 3 above (CSS + JS + server) | ✅ |
+| `clean` + `bundle-ui` | Full clean rebuild | ✅ |
+
+```bash
+make bundle-ui            # Build everything (CSS + JS + server)
+make bundle-server        # Server only
+make bundle-all           # Framework JS only
+make bundle-css           # CSS only
+make bundle-ltng-ui       # Core framework only
+make clean                # Remove build artifacts
+```
+
+### Makefile Targets
+
+```bash
+make bundle-ui              # Build everything (CSS + JS + server)
+make bundle-ui-server       # Server bundle only
+make bundle-all             # Framework JS bundle only
+make bundle-css             # CSS bundle + minify only
+make bundle-ltng-ui         # Core framework only
+make bundle-ltng-components # Components only
+make bundle-ltng-tools      # Tools only
+make bundle-ltng-testingtools # Testing tools only
+make clean                  # Remove build artifacts
+```
 
 ### ltng-tools
 
@@ -420,7 +473,7 @@ console.log(randomEmail())  // 'abc123@xyz.com'
 make playground-csr
 
 # Or directly
-node scripts/ltng-server.js --src=playground/001 --mode=csr --port=3000
+bun scripts/ltng-ui-server.js --src=playground/001 --mode=csr --port=3000
 ```
 
 ---
@@ -428,16 +481,23 @@ node scripts/ltng-server.js --src=playground/001 --mode=csr --port=3000
 ## Project Structure
 
 ```
-ltng-framework/
-├── ltng-framework.js    # Core framework
+ltng-ui/
+├── ltng-ui.js           # Core framework
 ├── ltng-components/     # UI component library
 ├── ltng-tools/          # Utility libraries
 ├── ltng-testingtools/   # Testing framework
 ├── ltng-book/           # Component documentation
+├── build/               # Bundled/minified outputs
+│   └── modules/         # esbuild entry points
 ├── scripts/             # Build & server scripts
+│   ├── ltng-ui-server.js
+│   ├── build-bundle.js
+│   ├── minifier.js
+│   ├── server/          # CSR, SSR, SSG handlers
+│   └── internal/        # Transpiler, CSS bundler
 ├── playground/          # Example applications
 ├── docs/                # Documentation
-│   └── STATE_MANAGEMENT.md
+│   ├── STATE_MANAGEMENT.md
 │   └── Design Overview.md
 └── examples/            # Usage examples
 ```

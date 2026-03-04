@@ -1,7 +1,7 @@
-const fs = require('fs')
-const path = require('path')
-const { renderFile } = require('./ssr')
-const { resolvePath } = require('../internal/transpiler')
+import fs from 'fs'
+import path from 'path'
+import { renderFile } from './ssr.js'
+import { resolvePath } from '../internal/transpiler.js'
 
 function buildSSG(config) {
     const { srcDir, distDir, rootDir } = config
@@ -309,4 +309,4 @@ function handleSSGServe(req, res, config) {
     }
 }
 
-module.exports = { buildSSG, handleSSGServe }
+export { buildSSG, handleSSGServe }

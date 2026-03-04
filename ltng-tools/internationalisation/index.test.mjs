@@ -1,4 +1,5 @@
-import { Test, run } from '../../ltng-testingtools/gotest.mjs'
+import ltngTest from '../../ltng-testingtools/ltng-test.mjs'
+const { Test, run } = ltngTest
 import { fileURLToPath } from 'url'
 import LTNG_INTL from './index.mjs'
 

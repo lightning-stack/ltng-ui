@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs'
+import path from 'path'
 
 function bundleCss(rootDir, componentsDir, buildDir) {
     console.log('Bundling CSS...');
@@ -39,6 +39,6 @@ function bundleCss(rootDir, componentsDir, buildDir) {
     console.log(`CSS bundled to ${cssBundlePath} (${cssFiles.length} files).`);
 }
 
-module.exports = {
+export {
     bundleCss
-};
+}

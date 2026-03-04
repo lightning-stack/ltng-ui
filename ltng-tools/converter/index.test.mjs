@@ -1,4 +1,5 @@
-import { run, Group } from '../../ltng-testingtools/gotest.mjs'
+import ltngTest from '../../ltng-testingtools/ltng-test.mjs'
+const { run, Group } = ltngTest
 import { fileURLToPath } from 'url'
 
 await Group("Object Tests", async () => {

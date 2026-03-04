@@ -1,5 +1,5 @@
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
 /**
  * Resolves a path relative to a base directory or using an import map.
@@ -148,7 +148,7 @@ function minify(code) {
         .join('\n')
 }
 
-module.exports = {
+export {
     resolvePath,
     transpile,
     minify
