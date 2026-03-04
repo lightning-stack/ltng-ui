@@ -138,7 +138,7 @@ const tags = [
 	'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'button', 'input',
 	'label', 'ul', 'ol', 'li', 'img', 'form', 'nav',
 	// Form elements
-	'select', 'option', 'optgroup', 'textarea', 'fieldset', 'legend',
+	'select', 'option', 'optgroup', 'textarea', 'fieldset', 'legend', 'datalist',
 	// Table elements
 	'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
 	// Other common elements

@@ -1,8 +1,10 @@
-const http = require('http')
-const path = require('path')
-const handleCSR = require('./server/csr')
-const { handleSSR } = require('./server/ssr')
-const { buildSSG, handleSSGServe } = require('./server/ssg')
+import fs from 'fs'
+import http from 'http'
+import path from 'path'
+import { parseRoutesFile } from './internal/routes-parser.js'
+import handleCSR from './server/csr.js'
+import { handleSSR } from './server/ssr.js'
+import { buildSSG, handleSSGServe } from './server/ssg.js'
 
 // CLI Argument Parsing
 const args = process.argv.slice(2)
@@ -19,6 +21,19 @@ const PORT = portArg ? parseInt(portArg.split('=')[1], 10) : 3000
 const srcArg = args.find(arg => arg.startsWith('--src='))
 const SRC_DIR = srcArg ? path.resolve(srcArg.split('=')[1]) : process.cwd()
 
+const routesArg = args.find(arg => arg.startsWith('--routes='))
+let routeMap = null
+if (routesArg) {
+    const routesPath = path.resolve(routesArg.split('=')[1])
+    try {
+        routeMap = parseRoutesFile(routesPath)
+        console.log(`Routes: loaded ${Object.keys(routeMap).length} routes from ${routesPath}`)
+    } catch (e) {
+        console.error(`Failed to load routes file: ${e.message}`)
+        process.exit(1)
+    }
+}
+
 const distArg = args.find(arg => arg.startsWith('--dist='))
 const DIST_DIR = distArg ? path.resolve(distArg.split('=')[1]) : path.join(process.cwd(), 'dist')
 
@@ -29,7 +44,8 @@ const config = {
     distDir: DIST_DIR,
     rootDir: ROOT_DIR,
     port: PORT,
-    mode: mode
+    mode: mode,
+    routeMap: routeMap
 }
 
 console.log(`Mode: ${mode}`)
