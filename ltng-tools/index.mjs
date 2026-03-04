@@ -1,4 +1,5 @@
 export * from './converter/index.mjs'
 export * from './internationalisation/index.mjs'
+export { default as translator } from './internationalisation/index.mjs'
 export * from './random/index.mjs'
 export * from './transport/index.mjs'

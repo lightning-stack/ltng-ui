@@ -25,6 +25,8 @@ function MakeDictionaries(dictionaries, defaultLocale) {
 	}
 }
 
+export { MakeDictionaries }
+
 export default {
 	MakeDictionaries
 }
