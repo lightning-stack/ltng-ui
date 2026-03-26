@@ -1,6 +1,7 @@
 import ltngtesting from './ltng-test.mjs'
 import gherkinTest from './gherkin-test.mjs'
 import DOMMock from '../mocks/mock-dom.js'
+import { render, screen, fireEvent } from './behavioural.mjs'
 
 // Set up the mocked browser environment so `ltng-ui.js` can mount successfully in NodeJS
 const win = DOMMock.createWindow()
@@ -14,7 +15,7 @@ globalThis.Node = win.Node
 
 await import('../ltng-ui.js')
 globalThis.TextNode = globalThis.window.TextNode // sync Node global with window property since it overrides it
-const { div, h1, p, button, section, main, form, input, label } = globalThis.window
+const { h1, div, p, input, button, h2, createStore, reactiveElement, section, main, form, label } = globalThis.window
 
 // === Go-like Tests ===
 ltngtesting.Test("Addition", (t) => {
@@ -115,6 +116,94 @@ ltngtesting.Test("Real ltng-ui Framework Snapshot Example", (t) => {
 	// Since myAuthLayout is a real simulated DOM element (HTMLElement instance), 
 	// MatchSnapshot correctly traverses node.attributes and node.childNodes!
 	t.MatchSnapshot(myAuthLayout, 'real_ltng_ui_login_layout')
+})
+
+ltngtesting.Test("Behavioral Testing Library", (t) => {
+	const myComponent = div({ class: 'container' },
+		h1(null, 'Test Title'),
+		p({ class: 'description' }, 'Some detailed text in a paragraph.'),
+		input({ type: 'text', placeholder: 'Enter name', onInput: (e) => { e.target.setAttribute('data-dirty', 'true') } }),
+		button({ 
+			type: 'button', 
+			onClick: (e) => { e.target.textContent = 'Clicked!' },
+			'data-testid': 'submit-btn'
+		}, 'Submit')
+	)
+
+	render(myComponent)
+
+	// Test getByText
+	const heading = screen.getByText('Test Title')
+	t.Assert(heading !== null, "Should find element by exact text")
+	const tag = (heading._tag || heading.tagName || '').toLowerCase()
+	t.Equal(tag, 'h1', "Found element should be h1")
+
+	const paragraph = screen.getByText('detailed text')
+	t.Assert(paragraph !== null, "Should find element by partial text")
+
+	// Test getByTestId
+	const btn = screen.getByTestId('submit-btn')
+	t.Assert(btn !== null, "Should find element by test ID")
+
+	// Test getByPlaceholder
+	const inputEl = screen.getByPlaceholder('Enter name')
+	t.Assert(inputEl !== null, "Should find element by placeholder")
+
+	// Test fireEvent.click
+	fireEvent.click(btn)
+	t.Equal(btn.textContent, 'Clicked!', "Button textContent should have updated via onClick closure")
+
+	// Test fireEvent.input
+	fireEvent.input(inputEl, { target: { value: 'John' } })
+	t.Equal(inputEl.value, 'John', "Input value should update")
+	t.Equal(inputEl.getAttribute('data-dirty'), 'true', "onInput should be triggered")
+})
+
+ltngtesting.Test("Behavioral Testing Library - Reactivity", (t) => {
+	// 1. Create a store for the counter
+	const store = createStore({ count: 0 })
+	
+	// 2. Build a reactive component layout using global createStore and reactiveElement
+	const counterComponent = div({ class: 'counter-app' },
+		h2(null, 'Counter App'),
+		// The counter display itself is reactive
+		reactiveElement(store, 'count', (count) => 
+			p({ 'data-testid': 'count-display' }, `Current count: ${count}`)
+		),
+		div({ class: 'buttons' },
+			button({ 
+				onClick: () => store.setState({ count: store.getState().count - 1 }),
+				'data-testid': 'decrement-btn'
+			}, 'Decrement'),
+			button({ 
+				onClick: () => store.setState({ count: store.getState().count + 1 }),
+				'data-testid': 'increment-btn'
+			}, 'Increment')
+		)
+	)
+
+	// 3. Mount
+	render(counterComponent)
+
+	// 4. Initial state assertions
+	let display = screen.getByTestId('count-display')
+	t.Equal(display.textContent, 'Current count: 0', 'Initial count should be 0')
+
+	// 5. Fire increment event
+	const incBtn = screen.getByTestId('increment-btn')
+	fireEvent.click(incBtn)
+	
+	// Query the DOM again to ensure the reactive Element replaced itself!
+	display = screen.getByTestId('count-display')
+	t.Equal(display.textContent, 'Current count: 1', 'Count should increment to 1')
+
+	// 6. Fire decrement event multiple times
+	const decBtn = screen.getByTestId('decrement-btn')
+	fireEvent.click(decBtn)
+	fireEvent.click(decBtn)
+	
+	display = screen.getByTestId('count-display')
+	t.Equal(display.textContent, 'Current count: -1', 'Count should decrement to -1')
 })
 
 // === Gherkin-like Tests ===

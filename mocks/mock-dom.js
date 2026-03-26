@@ -24,6 +24,17 @@ class Node {
 			}
 		}
 	}
+
+	replaceWith(newElement) {
+		if (this.parentNode) {
+			const index = this.parentNode.childNodes.indexOf(this)
+			if (index > -1) {
+				this.parentNode.childNodes.splice(index, 1, newElement)
+				newElement.parentNode = this.parentNode
+				this.parentNode = null
+			}
+		}
+	}
 }
 
 class TextNode extends Node {
@@ -49,6 +60,7 @@ class HTMLElement extends Node {
 				this.attributes['class'] = [...new Set([...existing, ...classes])].join(' ')
 			}
 		}
+		this._listeners = {}
 	}
 
 	setAttribute(name, value) {
@@ -59,12 +71,21 @@ class HTMLElement extends Node {
 		return this.attributes[name]
 	}
 
-	addEventListener() {
-		// No-op for server side
+	addEventListener(type, listener) {
+		if (!this._listeners[type]) this._listeners[type] = []
+		this._listeners[type].push(listener)
 	}
 
 	// Stub for closest
 	closest() { return null }
+
+	get textContent() {
+		return this.childNodes.map(c => c.textContent || '').join('')
+	}
+
+	set textContent(text) {
+		this.childNodes = [new TextNode(text)]
+	}
 
 	toString() {
 		const attrs = Object.entries(this.attributes)
