@@ -1,0 +1,23 @@
+<main class="split-screen-layout" data-theme="dark">
+  <section class="brand-panel">
+    <h1 class="h1" id="[uuid-v7]">
+      Welcome Native
+    </h1>
+    <p class="subtitle">
+      This is a real parsed DOM element.
+    </p>
+  </section>
+  <section class="form-panel">
+    <form id="login-form" method="POST">
+      <div class="form-group">
+        <label for="email">
+          Email Address
+        </label>
+        <input id="email" required="true" type="email" />
+      </div>
+      <button class="btn btn--lg btn--primary" type="submit">
+        Sign In Native
+      </button>
+    </form>
+  </section>
+</main>

@@ -1,4 +1,7 @@
 import { color } from './colours.mjs'
+import fs from 'node:fs'
+import path from 'node:path'
+import { snapshotSerializeNode } from './snapshot.mjs'
 
 const tests = []
 let currentSuite = ""
@@ -22,6 +25,7 @@ async function run() {
 
 	// Parse arguments for filtering
 	const args = process.argv.slice(2)
+	const updateSnapshots = args.includes("--update-snapshots") || process.env.UPDATE_SNAPSHOTS === 'true'
 	let filterRegex = null
 	const runIndex = args.indexOf("--run")
 	if (runIndex !== -1 && args[runIndex + 1]) {
@@ -75,6 +79,38 @@ async function run() {
 			},
 			Log: (...args) => {
 				console.log(`    [LOG]`, ...args)
+			},
+			MatchSnapshot: (actual, snapshotName) => {
+				const mainScript = process.argv[1] || process.cwd()
+				// Determine where to save __snapshots__. If main script is a file, use its dirname.
+				let baseDir = fs.statSync(mainScript).isDirectory() ? mainScript : path.dirname(mainScript)
+				const snapDir = path.join(baseDir, '__snapshots__')
+				
+				if (!fs.existsSync(snapDir)) {
+					fs.mkdirSync(snapDir, { recursive: true })
+				}
+
+				const sName = snapshotName || test.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+				const snapPath = path.join(snapDir, `${sName}.snap`)
+				
+				const serialized = typeof actual === 'object' ? snapshotSerializeNode(actual) : String(actual)
+				
+				if (!fs.existsSync(snapPath) || updateSnapshots) {
+					fs.writeFileSync(snapPath, serialized, 'utf-8')
+					console.log(color(`    [SNAPSHOT] Created/Updated: ${sName}.snap`, "blue"))
+					return
+				}
+				
+				const expected = fs.readFileSync(snapPath, 'utf-8')
+				if (serialized !== expected) {
+					console.error(
+						color(
+							`    [FAIL] ${test.name}: Snapshot mismatch for '${sName}'\n      Run with --update-snapshots to update.\n\n--- Expected\n${expected}\n\n+++ Actual\n${serialized}`,
+							"red"
+						)
+					)
+					isFailed = true
+				}
 			},
 		}
 

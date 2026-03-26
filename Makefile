@@ -80,7 +80,10 @@ bundle-ltng-components:
 	npx esbuild ltng-components/index.mjs --bundle --platform=browser --outfile=build/ltng-components.esbuild.min.js --minify --format=esm
 
 bundle-ltng-testingtools:
-	npx esbuild ltng-testingtools/index.mjs --bundle --platform=browser --outfile=build/ltng-testingtools.esbuild.min.js --minify --format=esm
+	npx -y esbuild ltng-testingtools/index.mjs \
+	--bundle --platform=browser \
+	--external:node:fs --external:node:path \
+	--outfile=build/ltng-testingtools.esbuild.min.js --minify --format=esm
 
 bundle-ltng-tools:
 	npx esbuild ltng-tools/index.mjs --bundle --platform=browser --outfile=build/ltng-tools.esbuild.min.js --minify --format=esm
@@ -109,7 +112,10 @@ bundle-css:
 	console.log('CSS bundled + minified: build/ltng-ui-all.min.css (' + files.length + ' files)');"
 
 bundle-all:
-	npx esbuild build/modules/exports.js --bundle --platform=browser --outfile=build/ltng-ui-all.esbuild.min.js --minify --format=esm
+	npx esbuild build/modules/exports.js \
+	--bundle --platform=browser \
+	--external:node:fs --external:node:path \
+	--outfile=build/ltng-ui-all.esbuild.min.js --minify --format=esm
 
 bundle-ui: bundle-css bundle-all bundle-ui-server
 
