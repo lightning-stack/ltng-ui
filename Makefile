@@ -7,6 +7,9 @@
 test-ltng-testingtools:
 	bun ltng-testingtools/index.test.mjs
 
+update-snapshots:
+	UPDATE_SNAPSHOTS=true bun ltng-testingtools/index.test.mjs
+
 test-ltng-tools:
 	bun ltng-tools/index.test.mjs
 
