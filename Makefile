@@ -122,5 +122,7 @@ bundle-all:
 
 bundle-ui: bundle-css bundle-all bundle-ui-server
 
+bundle-all-ui: bundle-ui bundle-ltng-ui bundle-ltng-components bundle-ltng-testingtools bundle-ltng-tools
+
 clean:
 	rm -f build/*.min.js build/*.min.css build/.tmp-*
