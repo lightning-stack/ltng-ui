@@ -121,7 +121,14 @@ function createElement(tag, props, ...children) {
 	} else {
 		// Default props if null/undefined
 		element.setAttribute('class', tag.toLowerCase())
-		element.setAttribute('id', generateUUIDv7())
+		// Use window.generateUUIDv7() explicitly — not the local reference.
+		// When esbuild minifies this file as a classic script, the local
+		// generateUUIDv7 binding gets renamed (e.g. to 'b'). The tags loop
+		// then overwrites window.b with the <b> tag factory, causing infinite
+		// recursion when 'b()' is called. window.generateUUIDv7 is set before
+		// the tags loop and is never overwritten, so it always resolves safely.
+		element.setAttribute('id', window.generateUUIDv7())
+		// element.setAttribute('id', generateUUIDv7())
 	}
 
 	// it can now be simplified with prototype render call
