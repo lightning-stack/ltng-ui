@@ -140,8 +140,7 @@ bun-bundle-ltng-components:
 
 bun-bundle-ltng-testingtools:
 	bun build ltng-testingtools/index.mjs \
-	--target=browser \
-	--external node:fs --external node:path \
+	--target=bun \
 	--outfile=build/ltng-testingtools.bun.min.js --minify --format=esm
 
 bun-bundle-ltng-tools:
