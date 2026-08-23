@@ -98,8 +98,10 @@ on stable input.
 run `bun build`, outputs carry the final names (no `.esbuild.`/`.bun.` infixes:
 `ltng-ui-all.min.js`, `ltng-ui.min.js`, ...), `scripts/build-bundle.js` (the
 esbuild post-processing pipeline) is deleted, and `npx esbuild` is gone from the
-Makefile. `scripts/minifier.js` + `scripts/internal/css-bundler.js` (the custom
-`make minify` pipeline) remain as legacy — deletion is a separate decision.
+Makefile. Risk #4 is resolved: `scripts/minifier.js` + `scripts/internal/css-bundler.js`
+(the custom `make minify` pipeline) have been deleted as well;
+`scripts/internal/transpiler.js` is retained — the legacy CSR/SSR/SSG engines
+still import it.
 
 1. **Add side-by-side targets.** New `bun-bundle-*` Make targets emitting
    `build/*.bun.min.js` next to the existing esbuild outputs. esbuild targets stay

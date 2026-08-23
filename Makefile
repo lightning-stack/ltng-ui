@@ -70,9 +70,6 @@ example-ssg-bun:
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg --engine=bun
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssg
 
-minify:
-	bun scripts/minifier.js
-
 bundle:
 	bun scripts/build-bundle.bun.js
 

@@ -522,9 +522,8 @@ ltng-ui/
 │   ├── ltng-ui-server.js
 │   ├── build-bundle.bun.js   # Bun.build bundle pipeline
 │   ├── bundle-css.js         # Bun CSS bundler
-│   ├── minifier.js
 │   ├── server/          # CSR, SSR, SSG handlers (+ ssr-bun.js: Bun.serve SSR)
-│   └── internal/        # Transpiler, CSS bundler
+│   └── internal/        # Transpiler (legacy engines), routes parser
 ├── playground/          # Example applications
 ├── docs/                # Documentation
 │   ├── STATE_MANAGEMENT.md
