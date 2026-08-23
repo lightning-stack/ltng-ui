@@ -124,5 +124,38 @@ bundle-ui: bundle-css bundle-all bundle-ui-server
 
 bundle-all-ui: bundle-ui bundle-ltng-ui bundle-ltng-components bundle-ltng-testingtools bundle-ltng-tools
 
+################################################################################
+# Bun Bundle / Minify Targets (side-by-side with esbuild — proposal Phase 1)
+# See scripts/BUN_TOOLCHAIN_PROPOSAL.md
+################################################################################
+
+bun-bundle-ui-server:
+	bun build scripts/ltng-ui-server.js --target=node --outfile=build/ltng-ui-server.bun.min.js --minify
+
+bun-bundle-ltng-ui:
+	bun build ltng-ui.js --target=browser --outfile=build/ltng-ui.bun.min.js --minify --format=esm
+
+bun-bundle-ltng-components:
+	bun build ltng-components/index.mjs --target=browser --outfile=build/ltng-components.bun.min.js --minify --format=esm
+
+bun-bundle-ltng-testingtools:
+	bun build ltng-testingtools/index.mjs \
+	--target=browser \
+	--external node:fs --external node:path \
+	--outfile=build/ltng-testingtools.bun.min.js --minify --format=esm
+
+bun-bundle-ltng-tools:
+	bun build ltng-tools/index.mjs --target=browser --outfile=build/ltng-tools.bun.min.js --minify --format=esm
+
+bun-bundle-css:
+	bun scripts/bundle-css.js
+
+bun-bundle-all:
+	bun scripts/build-bundle.bun.js
+
+bun-bundle-ui: bun-bundle-css bun-bundle-all bun-bundle-ui-server
+
+bun-bundle-all-ui: bun-bundle-ui bun-bundle-ltng-ui bun-bundle-ltng-components bun-bundle-ltng-testingtools bun-bundle-ltng-tools
+
 clean:
 	rm -f build/*.min.js build/*.min.css build/.tmp-*
