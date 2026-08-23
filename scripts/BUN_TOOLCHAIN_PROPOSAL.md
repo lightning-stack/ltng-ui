@@ -191,7 +191,13 @@ tolerates re-definition of non-configurable properties left by earlier renders
 correct).
 SSR renders initial store state (mock `localStorage` is empty); persisted client
 state appears after hydration — that is the nuke-and-pave contract.
-`bun build --compile` standalone-binary packaging remains a follow-up.
+
+**Standalone binary (implemented):** `make compile-ui-server` packages the whole
+server (CSR/SSR/SSG, both engines) as a self-contained executable via
+`bun build --compile --minify` into `build/bin/` (gitignored);
+`compile-ui-server-linux` cross-compiles for `bun-linux-x64`. Verified: compiled
+binaries still support runtime dynamic `import()` of freshly written temp files,
+so the bun SSR engine's per-render re-execution works unchanged.
 
 Replace the `http.createServer` + `vm.createContext` approach in
 `scripts/ltng-ui-server.js` / `scripts/server/ssr.js` with:

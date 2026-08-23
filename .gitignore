@@ -2,6 +2,9 @@
 /dist
 /dst
 
+# compiled standalone binaries
+/build/bin/
+
 # Node modules
 node_modules/
 
