@@ -8,7 +8,7 @@ const ROOT = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT, 'build')
 const COMPONENTS_DIR = path.join(ROOT, 'ltng-components')
 
-const CSS_BUNDLE_NAME = 'ltng-ui-all.bun.min.css'
+const CSS_BUNDLE_NAME = 'ltng-ui-all.min.css'
 
 function findCssFiles(dir, out = []) {
     if (!fs.existsSync(dir)) return out

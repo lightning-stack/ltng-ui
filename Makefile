@@ -74,7 +74,7 @@ minify:
 	bun scripts/minifier.js
 
 bundle:
-	bun scripts/build-bundle.js
+	bun scripts/build-bundle.bun.js
 
 ltng-book:
 	bun scripts/ltng-ui-server.js --src=pkg/ltng-book --dist=dist/ltng-book --port=$(port) --mode=csr
@@ -84,91 +84,37 @@ ltng-book-ssg:
 	bun scripts/ltng-ui-server.js --src=pkg/ltng-book --dist=dist/ltng-book --port=$(port) --mode=ssg
 
 ################################################################################
-# Bundle / Minify Targets (esbuild)
+# Bundle / Minify Targets (bun build)
+# See scripts/BUN_TOOLCHAIN_PROPOSAL.md — esbuild was removed at cutover.
 ################################################################################
 
 bundle-ui-server:
-	npx esbuild scripts/ltng-ui-server.js --bundle --platform=node --outfile=build/ltng-ui-server.min.js --minify
+	bun build scripts/ltng-ui-server.js --target=node --outfile=build/ltng-ui-server.min.js --minify
 
 bundle-ltng-ui:
-	npx esbuild ltng-ui.js --bundle --platform=browser --outfile=build/ltng-ui.esbuild.min.js --minify --format=esm
+	bun build ltng-ui.js --target=browser --outfile=build/ltng-ui.min.js --minify --format=esm
 
 bundle-ltng-components:
-	npx esbuild ltng-components/index.mjs --bundle --platform=browser --outfile=build/ltng-components.esbuild.min.js --minify --format=esm
+	bun build ltng-components/index.mjs --target=browser --outfile=build/ltng-components.min.js --minify --format=esm
 
+# --target=bun keeps node:fs/node:path external instead of polyfilled
 bundle-ltng-testingtools:
-	npx -y esbuild ltng-testingtools/index.mjs \
-	--bundle --platform=browser \
-	--external:node:fs --external:node:path \
-	--outfile=build/ltng-testingtools.esbuild.min.js --minify --format=esm
+	bun build ltng-testingtools/index.mjs \
+	--target=bun \
+	--outfile=build/ltng-testingtools.min.js --minify --format=esm
 
 bundle-ltng-tools:
-	npx esbuild ltng-tools/index.mjs --bundle --platform=browser --outfile=build/ltng-tools.esbuild.min.js --minify --format=esm
+	bun build ltng-tools/index.mjs --target=browser --outfile=build/ltng-tools.min.js --minify --format=esm
 
 bundle-css:
-	node -e "\
-	const fs = require('fs'); \
-	const path = require('path'); \
-	const { execSync } = require('child_process'); \
-	const dir = 'ltng-components'; \
-	const tmp = 'build/.tmp-bundle.css'; \
-	function findCss(d, out) { \
-		fs.readdirSync(d, { withFileTypes: true }).forEach(f => { \
-			const p = path.join(d, f.name); \
-			if (f.isDirectory()) findCss(p, out); \
-			else if (f.name.endsWith('.css')) out.push(p); \
-		}); \
-		return out; \
-	} \
-	const files = findCss(dir, []); \
-	const themeIdx = files.findIndex(f => f.endsWith('theme.css')); \
-	if (themeIdx > -1) { const t = files.splice(themeIdx, 1)[0]; files.unshift(t); } \
-	fs.writeFileSync(tmp, files.map(f => fs.readFileSync(f, 'utf8')).join('\n')); \
-	execSync('npx esbuild ' + tmp + ' --minify --outfile=build/ltng-ui-all.min.css'); \
-	fs.unlinkSync(tmp); \
-	console.log('CSS bundled + minified: build/ltng-ui-all.min.css (' + files.length + ' files)');"
+	bun scripts/bundle-css.js
 
 bundle-all:
-	npx esbuild build/modules/exports.js \
-	--bundle --platform=browser \
-	--external:node:fs --external:node:path \
-	--outfile=build/ltng-ui-all.esbuild.min.js --minify --format=esm
+	bun scripts/build-bundle.bun.js
 
 bundle-ui: bundle-css bundle-all bundle-ui-server
 
 bundle-all-ui: bundle-ui bundle-ltng-ui bundle-ltng-components bundle-ltng-testingtools bundle-ltng-tools
-
-################################################################################
-# Bun Bundle / Minify Targets (side-by-side with esbuild — proposal Phase 1)
-# See scripts/BUN_TOOLCHAIN_PROPOSAL.md
-################################################################################
-
-bun-bundle-ui-server:
-	bun build scripts/ltng-ui-server.js --target=node --outfile=build/ltng-ui-server.bun.min.js --minify
-
-bun-bundle-ltng-ui:
-	bun build ltng-ui.js --target=browser --outfile=build/ltng-ui.bun.min.js --minify --format=esm
-
-bun-bundle-ltng-components:
-	bun build ltng-components/index.mjs --target=browser --outfile=build/ltng-components.bun.min.js --minify --format=esm
-
-bun-bundle-ltng-testingtools:
-	bun build ltng-testingtools/index.mjs \
-	--target=bun \
-	--outfile=build/ltng-testingtools.bun.min.js --minify --format=esm
-
-bun-bundle-ltng-tools:
-	bun build ltng-tools/index.mjs --target=browser --outfile=build/ltng-tools.bun.min.js --minify --format=esm
-
-bun-bundle-css:
-	bun scripts/bundle-css.js
-
-bun-bundle-all:
-	bun scripts/build-bundle.bun.js
-
-bun-bundle-ui: bun-bundle-css bun-bundle-all bun-bundle-ui-server
-
-bun-bundle-all-ui: bun-bundle-ui bun-bundle-ltng-ui bun-bundle-ltng-components bun-bundle-ltng-testingtools bun-bundle-ltng-tools
 
 ################################################################################
 # Standalone Binary (bun build --compile)

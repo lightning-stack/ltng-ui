@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename)
 const ROOT = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT, 'build')
 const ENTRY = path.join(BUILD_DIR, 'modules', 'exports.js')
-const OUT_NAME = 'ltng-ui-all.bun.min.js'
+const OUT_NAME = 'ltng-ui-all.min.js'
 
 // Matches component-level `window.loadCSS(new URL('...', import.meta.url).href)` call
 // sites in UNMINIFIED source only — never the `window.loadCSS = ...` definition in

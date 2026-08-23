@@ -397,63 +397,26 @@ This ensures the client creates a fresh, interactive DOM identical to server out
 
 ## Build Outputs
 
-All bundles are produced via [esbuild](https://esbuild.github.io/) (invoked through `npx`, no npm dependencies).
-
-| Bundle | Contents | Size |
-|--------|----------|------|
-| `ltng-ui-all.esbuild.min.js` | Everything — ui + components + tools + testingtools + book | 20K |
-| `ltng-ui-server.min.js` | Dev server (CSR/SSR/SSG) | 17K |
-| `ltng-components.esbuild.min.js` | Components only (button, card, form, etc.) | 9.5K |
-| `ltng-ui-all.min.css` | All `ltng-components` CSS concatenated + minified (`theme.css` first) | 5.3K |
-| `ltng-ui.esbuild.min.js` | Core framework only (`ltng-ui.js`) | 3.6K |
-| `ltng-testingtools.esbuild.min.js` | Testing tools only | 3.4K |
-| `ltng-tools.esbuild.min.js` | Utility tools only (converter, i18n, random, transport) | 2.6K |
-
-### Target → Output Mapping
-
-| Target | Output | Size |
-|--------|--------|------|
-| `bundle-css` | `build/ltng-ui-all.min.css` | 5.3K |
-| `bundle-all` | `build/ltng-ui-all.esbuild.min.js` | 20K |
-| `bundle-ui-server` | `build/ltng-ui-server.min.js` | 17K |
-| `bundle-ltng-ui` | `build/ltng-ui.esbuild.min.js` | 3.6K |
-| `bundle-ltng-components` | `build/ltng-components.esbuild.min.js` | 9.5K |
-| `bundle-ltng-tools` | `build/ltng-tools.esbuild.min.js` | 2.6K |
-| `bundle-ltng-testingtools` | `build/ltng-testingtools.esbuild.min.js` | 3.4K |
-| `bundle-ui` _(unified)_ | All 3 above (CSS + JS + server) | ✅ |
-| `clean` + `bundle-ui` | Full clean rebuild | ✅ |
-
-```bash
-make bundle-ui            # Build everything (CSS + JS + server)
-make bundle-ui-server     # Server only
-make bundle-all           # Framework JS only
-make bundle-css           # CSS only
-make bundle-ltng-ui       # Core framework only
-make clean                # Remove build artifacts
-```
-
-### Bun Bundling (side-by-side with esbuild)
-
-The same bundles are also produced natively by [Bun](https://bun.com/docs/bundler)
-(`bun build` — no npx, no esbuild). The two toolchains run side-by-side until
-cutover; migration status and design notes live in
+All bundles are produced natively by [Bun](https://bun.com/docs/bundler)
+(`bun build` — no npx, no esbuild; the esbuild toolchain was removed at
+cutover). Migration history and design notes:
 [scripts/BUN_TOOLCHAIN_PROPOSAL.md](scripts/BUN_TOOLCHAIN_PROPOSAL.md).
 
-| Target | Output | Size |
-|--------|--------|------|
-| `bun-bundle-css` | `build/ltng-ui-all.bun.min.css` | 5.3K |
-| `bun-bundle-all` | `build/ltng-ui-all.bun.min.js` | 29K |
-| `bun-bundle-ui-server` | `build/ltng-ui-server.bun.min.js` | 17K |
-| `bun-bundle-ltng-ui` | `build/ltng-ui.bun.min.js` | 3.8K |
-| `bun-bundle-ltng-components` | `build/ltng-components.bun.min.js` | 10K |
-| `bun-bundle-ltng-tools` | `build/ltng-tools.bun.min.js` | 3.1K |
-| `bun-bundle-ltng-testingtools` | `build/ltng-testingtools.bun.min.js` | 9.1K |
-| `bun-bundle-ui` _(unified)_ | CSS + JS + server | ✅ |
-| `bun-bundle-all-ui` _(everything)_ | All of the above | ✅ |
+| Target | Output | Contents | Size |
+|--------|--------|----------|------|
+| `bundle-css` | `build/ltng-ui-all.min.css` | All `ltng-components` CSS (`theme.css` first) | 5.3K |
+| `bundle-all` | `build/ltng-ui-all.min.js` | Everything — ui + components + tools + testingtools + book | 29K |
+| `bundle-ui-server` | `build/ltng-ui-server.min.js` | Dev server (CSR/SSR/SSG, both engines) | 22K |
+| `bundle-ltng-ui` | `build/ltng-ui.min.js` | Core framework only | 3.8K |
+| `bundle-ltng-components` | `build/ltng-components.min.js` | Components only | 10K |
+| `bundle-ltng-tools` | `build/ltng-tools.min.js` | Utility tools only | 3.1K |
+| `bundle-ltng-testingtools` | `build/ltng-testingtools.min.js` | Testing tools only | 9.1K |
+| `bundle-ui` _(unified)_ | CSS + JS + server | | ✅ |
+| `bundle-all-ui` _(everything)_ | All of the above | | ✅ |
 
-Notes: `bun-bundle-all` strips per-component `loadCSS` calls at source level
-(via a `Bun.build` plugin) and appends a single loader for the bundled CSS.
-`bun-bundle-ltng-testingtools` targets the bun runtime (`--target=bun`) so its
+Notes: `bundle-all` strips per-component `loadCSS` calls at source level (via a
+`Bun.build` plugin) and appends a single loader for the bundled CSS.
+`bundle-ltng-testingtools` targets the bun runtime (`--target=bun`) so its
 `node:fs`/`node:path` imports stay external instead of being polyfilled.
 
 ### Standalone Binary
@@ -474,8 +437,9 @@ make compile-ui-server-linux  # bun-linux-x64  → build/bin/ltng-ui-server-linu
 ### Makefile Targets
 
 ```bash
-# esbuild (legacy)
+# bundling (bun build)
 make bundle-ui              # Build everything (CSS + JS + server)
+make bundle-all-ui          # Every bundle
 make bundle-ui-server       # Server bundle only
 make bundle-all             # Framework JS bundle only
 make bundle-css             # CSS bundle + minify only
@@ -483,12 +447,6 @@ make bundle-ltng-ui         # Core framework only
 make bundle-ltng-components # Components only
 make bundle-ltng-tools      # Tools only
 make bundle-ltng-testingtools # Testing tools only
-
-# bun bundler (side-by-side)
-make bun-bundle-ui          # CSS + JS + server via bun
-make bun-bundle-all-ui      # Every bun bundle
-make bun-bundle-css         # CSS bundle via bun
-make bun-bundle-all         # Framework JS bundle via bun
 
 # serving & SSG/SSR with the bun engine
 make example-ssg-bun        # Bun SSG build + serve for examples/
@@ -562,7 +520,6 @@ ltng-ui/
 │   └── bin/             # Compiled standalone binaries (gitignored)
 ├── scripts/             # Build & server scripts
 │   ├── ltng-ui-server.js
-│   ├── build-bundle.js       # esbuild bundle pipeline (legacy)
 │   ├── build-bundle.bun.js   # Bun.build bundle pipeline
 │   ├── bundle-css.js         # Bun CSS bundler
 │   ├── minifier.js
