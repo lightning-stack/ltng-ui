@@ -312,7 +312,11 @@ bun scripts/ltng-ui-server.js --mode=csr --src=./app --port=3000
 ### Server-Side Rendering (SSR)
 
 ```bash
+# Legacy engine (vm sandbox + mock DOM)
 bun scripts/ltng-ui-server.js --mode=ssr --src=./app --port=3000
+
+# Bun engine (Bun.serve + HTMLRewriter + native ESM execution)
+bun scripts/ltng-ui-server.js --mode=ssr --engine=bun --src=./app --port=3000
 ```
 
 | Step | What Happens |
@@ -328,12 +332,21 @@ bun scripts/ltng-ui-server.js --mode=ssr --src=./app --port=3000
 ### Static Site Generation (SSG)
 
 ```bash
-# Build
-bun scripts/ltng-ui-server.js --build --src=./app
+# Build (legacy engine: mock-DOM pre-render + asset copy)
+bun scripts/ltng-ui-server.js --build --mode=ssg --src=./app --dist=./dist
 
-# Serve
-bun scripts/ltng-ui-server.js --mode=ssg --src=./dist --port=3000
+# Build (bun engine: each HTML page is a Bun entrypoint — scripts and styles
+# bundled, minified, hashed, and path-rewritten)
+bun scripts/ltng-ui-server.js --build --mode=ssg --engine=bun --src=./app --dist=./dist
+
+# Serve (same for both engines)
+bun scripts/ltng-ui-server.js --mode=ssg --src=./app --dist=./dist --port=3000
 ```
+
+> **Bun-engine convention**: Bun rewrites `<script src>` tags to deferred
+> `type="module"` scripts, so page inline scripts must be `type="module"` too,
+> and cross-script globals must be explicit `window.x = ...` assignments.
+> Full details: [scripts/BUN_TOOLCHAIN_PROPOSAL.md](scripts/BUN_TOOLCHAIN_PROPOSAL.md).
 
 | Step | What Happens |
 |------|--------------|
@@ -412,16 +425,56 @@ All bundles are produced via [esbuild](https://esbuild.github.io/) (invoked thro
 
 ```bash
 make bundle-ui            # Build everything (CSS + JS + server)
-make bundle-server        # Server only
+make bundle-ui-server     # Server only
 make bundle-all           # Framework JS only
 make bundle-css           # CSS only
 make bundle-ltng-ui       # Core framework only
 make clean                # Remove build artifacts
 ```
 
+### Bun Bundling (side-by-side with esbuild)
+
+The same bundles are also produced natively by [Bun](https://bun.com/docs/bundler)
+(`bun build` — no npx, no esbuild). The two toolchains run side-by-side until
+cutover; migration status and design notes live in
+[scripts/BUN_TOOLCHAIN_PROPOSAL.md](scripts/BUN_TOOLCHAIN_PROPOSAL.md).
+
+| Target | Output | Size |
+|--------|--------|------|
+| `bun-bundle-css` | `build/ltng-ui-all.bun.min.css` | 5.3K |
+| `bun-bundle-all` | `build/ltng-ui-all.bun.min.js` | 29K |
+| `bun-bundle-ui-server` | `build/ltng-ui-server.bun.min.js` | 17K |
+| `bun-bundle-ltng-ui` | `build/ltng-ui.bun.min.js` | 3.8K |
+| `bun-bundle-ltng-components` | `build/ltng-components.bun.min.js` | 10K |
+| `bun-bundle-ltng-tools` | `build/ltng-tools.bun.min.js` | 3.1K |
+| `bun-bundle-ltng-testingtools` | `build/ltng-testingtools.bun.min.js` | 9.1K |
+| `bun-bundle-ui` _(unified)_ | CSS + JS + server | ✅ |
+| `bun-bundle-all-ui` _(everything)_ | All of the above | ✅ |
+
+Notes: `bun-bundle-all` strips per-component `loadCSS` calls at source level
+(via a `Bun.build` plugin) and appends a single loader for the bundled CSS.
+`bun-bundle-ltng-testingtools` targets the bun runtime (`--target=bun`) so its
+`node:fs`/`node:path` imports stay external instead of being polyfilled.
+
+### Standalone Binary
+
+The whole server (CSR/SSR/SSG, both engines, mock DOM) can be compiled into a
+self-contained executable — no Bun installation needed on the target machine:
+
+```bash
+make compile-ui-server        # host platform  → build/bin/ltng-ui-server (~61MB)
+make compile-ui-server-linux  # bun-linux-x64  → build/bin/ltng-ui-server-linux-x64 (~79MB)
+
+# Run it exactly like the script:
+./build/bin/ltng-ui-server --src=./app --mode=ssr --engine=bun --port=3000
+```
+
+`build/bin/` is gitignored — binaries are build artifacts, not repo content.
+
 ### Makefile Targets
 
 ```bash
+# esbuild (legacy)
 make bundle-ui              # Build everything (CSS + JS + server)
 make bundle-ui-server       # Server bundle only
 make bundle-all             # Framework JS bundle only
@@ -430,6 +483,23 @@ make bundle-ltng-ui         # Core framework only
 make bundle-ltng-components # Components only
 make bundle-ltng-tools      # Tools only
 make bundle-ltng-testingtools # Testing tools only
+
+# bun bundler (side-by-side)
+make bun-bundle-ui          # CSS + JS + server via bun
+make bun-bundle-all-ui      # Every bun bundle
+make bun-bundle-css         # CSS bundle via bun
+make bun-bundle-all         # Framework JS bundle via bun
+
+# serving & SSG/SSR with the bun engine
+make example-ssg-bun        # Bun SSG build + serve for examples/
+make example-ssr-bun        # Bun.serve SSR for examples/
+make playground-ssg-bun     # Bun SSG build + serve for playground/
+make playground-ssr-bun     # Bun.serve SSR for playground/
+
+# standalone binaries
+make compile-ui-server        # Host-platform binary
+make compile-ui-server-linux  # Linux x64 binary
+
 make clean                  # Remove build artifacts
 ```
 
@@ -488,12 +558,15 @@ ltng-ui/
 ├── ltng-testingtools/   # Testing framework
 ├── ltng-book/           # Component documentation
 ├── build/               # Bundled/minified outputs
-│   └── modules/         # esbuild entry points
+│   ├── modules/         # Bundle entry points
+│   └── bin/             # Compiled standalone binaries (gitignored)
 ├── scripts/             # Build & server scripts
 │   ├── ltng-ui-server.js
-│   ├── build-bundle.js
+│   ├── build-bundle.js       # esbuild bundle pipeline (legacy)
+│   ├── build-bundle.bun.js   # Bun.build bundle pipeline
+│   ├── bundle-css.js         # Bun CSS bundler
 │   ├── minifier.js
-│   ├── server/          # CSR, SSR, SSG handlers
+│   ├── server/          # CSR, SSR, SSG handlers (+ ssr-bun.js: Bun.serve SSR)
 │   └── internal/        # Transpiler, CSS bundler
 ├── playground/          # Example applications
 ├── docs/                # Documentation
