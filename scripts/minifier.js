@@ -21,7 +21,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 bundleCss(ROOT_DIR, COMPONENTS_DIR, OUTPUT_DIR)
 
 const entryPoints = [
-    'ltng-framework.js',
+    'ltng-ui.js',
     'ltng-testingtools.js',
     'ltng-tools.js',
     'ltng-book.js',
