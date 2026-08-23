@@ -40,6 +40,10 @@ playground-ssg:
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --build --mode=ssg
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssg
 
+playground-ssg-bun:
+	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --build --mode=ssg --engine=bun
+	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssg
+
 ################################################################################
 # Examples
 ################################################################################
@@ -54,6 +58,10 @@ example-ssr:
 
 example-ssg:
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg
+	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssg
+
+example-ssg-bun:
+	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg --engine=bun
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssg
 
 minify:

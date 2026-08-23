@@ -286,6 +286,54 @@ function buildSSG(config) {
     console.log('SSG Build complete.')
 }
 
+/**
+ * Bun-native SSG build (proposal Phase 2): each top-level HTML file in srcDir is a
+ * Bun HTML entrypoint — referenced scripts and stylesheets are bundled, minified,
+ * hashed, and their paths rewritten by Bun itself.
+ *
+ * Constraint: Bun rewrites `<script src>` tags to deferred `type="module"` scripts,
+ * so page inline scripts must be `type="module"` too or they run before the
+ * framework loads. See scripts/BUN_TOOLCHAIN_PROPOSAL.md.
+ */
+async function buildSSGBun(config) {
+    const { srcDir, distDir } = config
+
+    if (typeof Bun === 'undefined') {
+        console.error('--engine=bun requires running under the bun runtime.')
+        process.exit(1)
+    }
+
+    const entrypoints = fs.readdirSync(srcDir)
+        .filter(f => f.endsWith('.html'))
+        .map(f => path.join(srcDir, f))
+
+    if (entrypoints.length === 0) {
+        console.error(`No HTML entrypoints found in ${srcDir}`)
+        process.exit(1)
+    }
+
+    console.log(`Building SSG (bun) from ${srcDir} to ${distDir}...`)
+    const result = await Bun.build({
+        entrypoints: entrypoints,
+        outdir: distDir,
+        minify: true
+    })
+
+    if (!result.success) {
+        console.error('SSG (bun) build failed')
+        for (const message of result.logs) {
+            console.error(message)
+        }
+        process.exit(1)
+    }
+
+    for (const output of result.outputs) {
+        console.log(`  ${path.relative(process.cwd(), output.path)} (${output.size} bytes)`)
+    }
+
+    console.log('SSG (bun) build complete.')
+}
+
 function handleSSGServe(req, res, config) {
     const { distDir } = config
     // Serve static files from distDir
@@ -309,4 +357,4 @@ function handleSSGServe(req, res, config) {
     }
 }
 
-export { buildSSG, handleSSGServe }
+export { buildSSG, buildSSGBun, handleSSGServe }

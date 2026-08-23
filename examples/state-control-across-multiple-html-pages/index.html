@@ -6,12 +6,12 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>State Control Across Multiple HTML Pages</title>
 
-	<script src="../../ltng-framework.js"></script>
+	<script src="../../ltng-ui.js"></script>
 </head>
 
 <body>
-	<script>
-		globalStore = createStore({ count: 0, name: "Global Store" }, {persist: 'globalStore'})
+	<script type="module">
+		window.globalStore = createStore({ count: 0, name: "Global Store" }, {persist: 'globalStore'})
 
 		const container = div({ class: "container" },
 			h1({}, "State Control Across Multiple HTML Pages"),

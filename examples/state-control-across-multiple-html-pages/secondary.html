@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>State Control Across Multiple HTML Pages</title>
 
-	<script src="../../ltng-framework.js"></script>
+	<script src="../../ltng-ui.js"></script>
 </head>
 <body>
-    <script>
-		globalStore = createStore({ }, { persist: 'globalStore' })
+    <script type="module">
+		window.globalStore = createStore({ }, { persist: 'globalStore' })
 
         Body.render(
 			div({ class: "container" },

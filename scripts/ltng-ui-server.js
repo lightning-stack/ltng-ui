@@ -4,7 +4,7 @@ import path from 'path'
 import { parseRoutesFile } from './internal/routes-parser.js'
 import handleCSR from './server/csr.js'
 import { handleSSR } from './server/ssr.js'
-import { buildSSG, handleSSGServe } from './server/ssg.js'
+import { buildSSG, buildSSGBun, handleSSGServe } from './server/ssg.js'
 
 // CLI Argument Parsing
 const args = process.argv.slice(2)
@@ -14,6 +14,9 @@ const isBuildAndServe = args.includes('--b&s')
 
 const modeArg = args.find(arg => arg.startsWith('--mode='))
 const mode = modeArg ? modeArg.split('=')[1] : 'csr' // Default to CSR
+
+const engineArg = args.find(arg => arg.startsWith('--engine='))
+const engine = engineArg ? engineArg.split('=')[1] : 'legacy' // legacy | bun (SSG build only)
 
 const portArg = args.find(arg => arg.startsWith('--port='))
 const PORT = portArg ? parseInt(portArg.split('=')[1], 10) : 3000
@@ -45,6 +48,7 @@ const config = {
     rootDir: ROOT_DIR,
     port: PORT,
     mode: mode,
+    engine: engine,
     routeMap: routeMap
 }
 
@@ -56,7 +60,11 @@ console.log(`Port: ${PORT}`)
 // Logic Dispatcher
 if (isBuild || (isBuildAndServe && mode === 'ssg')) {
     if (mode === 'ssg') {
-        buildSSG(config)
+        if (engine === 'bun') {
+            await buildSSGBun(config)
+        } else {
+            buildSSG(config)
+        }
         if (isBuild) process.exit(0)
     } else {
         console.error('Build is only supported for SSG mode.')

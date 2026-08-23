@@ -118,7 +118,19 @@ edits. Rollback is trivial at every step until 5.
 
 ---
 
-## 5. Phase 2 — SSG via HTML entrypoints
+## 5. Phase 2 — SSG via HTML entrypoints ✅ (implemented)
+
+**Status:** shipped as `--engine=bun`. `buildSSGBun` in `scripts/server/ssg.js` feeds
+every top-level `*.html` in `--src` to `Bun.build` (`minify: true`, `outdir: --dist`);
+serving is unchanged (`handleSSGServe`). Make targets: `example-ssg-bun`,
+`playground-ssg-bun`. The legacy mock-DOM SSG path remains the default engine.
+
+**Convention (hard requirement for the bun engine):** Bun rewrites `<script src>`
+tags to deferred `type="module"` scripts. Page inline scripts must therefore be
+`type="module"` too — module scripts execute in document order, so the framework
+(whose API is explicitly `window`-attached) is loaded first; classic inline scripts
+would run before it. Mock-DOM pre-rendering (baked HTML) stays a follow-up, per
+risk #5.
 
 Today `--mode=ssg --build` (`scripts/server/ssg.js`) renders pages through the
 mock-DOM/vm machinery. With Bun:
