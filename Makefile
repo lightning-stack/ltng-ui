@@ -103,7 +103,7 @@ bundle-all-ui: bundle-ui bundle-ltng-ui bundle-ltng-components bundle-ltng-testi
 
 ################################################################################
 # Standalone Binary (bun build --compile)
-# Embeds the full server graph (CSR/SSR/SSG, both engines, mock DOM).
+# Embeds the full server graph (CSR/SSR/SSG, mock DOM).
 # Output lives in build/bin/ (gitignored — binaries are not committed).
 ################################################################################
 
@@ -112,6 +112,10 @@ compile-ui-server:
 
 compile-ui-server-linux:
 	bun build scripts/ltng-ui-server.js --compile --minify --target=bun-linux-x64 --outfile=build/bin/ltng-ui-server-linux-x64
+
+compile-all: compile-ui-server compile-ui-server-linux
+
+build-everything: clean bundle-all-ui compile-all
 
 clean:
 	rm -f build/*.min.js build/*.min.css build/.tmp-*
