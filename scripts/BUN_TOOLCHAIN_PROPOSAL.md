@@ -99,9 +99,14 @@ run `bun build`, outputs carry the final names (no `.esbuild.`/`.bun.` infixes:
 `ltng-ui-all.min.js`, `ltng-ui.min.js`, ...), `scripts/build-bundle.js` (the
 esbuild post-processing pipeline) is deleted, and `npx esbuild` is gone from the
 Makefile. Risk #4 is resolved: `scripts/minifier.js` + `scripts/internal/css-bundler.js`
-(the custom `make minify` pipeline) have been deleted as well;
-`scripts/internal/transpiler.js` is retained — the legacy CSR/SSR/SSG engines
-still import it.
+(the custom `make minify` pipeline) have been deleted as well.
+
+**Legacy engines removed (final cleanup):** `scripts/server/ssr.js` (vm + regex
+SSR) and `scripts/internal/transpiler.js` are deleted, along with the legacy
+`buildSSG` pre-render path in `ssg.js` and the `--engine` flag — SSR and SSG
+are Bun-native, full stop. A future pre-rendered-HTML SSG feature would build
+on `renderPageBun` from `server/ssr.js`. The server bundle now targets
+`--target=bun` (SSR requires the Bun runtime).
 
 1. **Add side-by-side targets.** New `bun-bundle-*` Make targets emitting
    `build/*.bun.min.js` next to the existing esbuild outputs. esbuild targets stay
@@ -168,9 +173,11 @@ e.g. `--engine=bun`), old path kept until parity is confirmed.
 
 ## 6. Phase 3 — SSR via `Bun.serve` ✅ (implemented)
 
-**Status:** shipped as `--mode=ssr --engine=bun` (`scripts/server/ssr-bun.js`).
-Make targets: `example-ssr-bun`, `playground-ssr-bun`. The legacy vm-based SSR
-stays the default engine.
+**Status:** shipped as `--mode=ssr --engine=bun` (`scripts/server/ssr-bun.js` —
+since renamed `scripts/server/ssr.js` when the legacy vm engine was removed and
+`--engine` retired; it is now simply `--mode=ssr`). Original Make targets
+`example-ssr-bun` / `playground-ssr-bun` folded into `example-ssr` /
+`playground-ssr`.
 
 **Design as built:**
 - `Bun.serve` with `routes` built from the parsed route map plus a fetch

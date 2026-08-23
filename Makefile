@@ -40,13 +40,6 @@ playground-ssg:
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --build --mode=ssg
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssg
 
-playground-ssr-bun:
-	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssr --engine=bun
-
-playground-ssg-bun:
-	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --build --mode=ssg --engine=bun
-	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssg
-
 ################################################################################
 # Examples
 ################################################################################
@@ -61,13 +54,6 @@ example-ssr:
 
 example-ssg:
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg
-	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssg
-
-example-ssr-bun:
-	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssr --engine=bun
-
-example-ssg-bun:
-	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg --engine=bun
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssg
 
 bundle:
@@ -85,8 +71,10 @@ ltng-book-ssg:
 # See scripts/BUN_TOOLCHAIN_PROPOSAL.md — esbuild was removed at cutover.
 ################################################################################
 
+# --target=bun: the server's SSR mode requires the Bun runtime (Bun.serve,
+# HTMLRewriter), and consumers run it with bun anyway.
 bundle-ui-server:
-	bun build scripts/ltng-ui-server.js --target=node --outfile=build/ltng-ui-server.min.js --minify
+	bun build scripts/ltng-ui-server.js --target=bun --outfile=build/ltng-ui-server.min.js --minify
 
 bundle-ltng-ui:
 	bun build ltng-ui.js --target=browser --outfile=build/ltng-ui.min.js --minify --format=esm

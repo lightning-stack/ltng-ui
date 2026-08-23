@@ -3,9 +3,8 @@ import http from 'http'
 import path from 'path'
 import { parseRoutesFile } from './internal/routes-parser.js'
 import handleCSR from './server/csr.js'
-import { handleSSR } from './server/ssr.js'
-import { buildSSG, buildSSGBun, handleSSGServe } from './server/ssg.js'
-import { startSSRBunServer } from './server/ssr-bun.js'
+import { buildSSGBun, handleSSGServe } from './server/ssg.js'
+import { startSSRBunServer } from './server/ssr.js'
 
 // CLI Argument Parsing
 const args = process.argv.slice(2)
@@ -16,8 +15,10 @@ const isBuildAndServe = args.includes('--b&s')
 const modeArg = args.find(arg => arg.startsWith('--mode='))
 const mode = modeArg ? modeArg.split('=')[1] : 'csr' // Default to CSR
 
-const engineArg = args.find(arg => arg.startsWith('--engine='))
-const engine = engineArg ? engineArg.split('=')[1] : 'legacy' // legacy | bun (SSG build only)
+// --engine is retired: SSR and SSG builds are Bun-native.
+if (args.some(arg => arg.startsWith('--engine='))) {
+    console.log('Note: --engine is no longer needed — SSR/SSG engines are unified on bun.')
+}
 
 const portArg = args.find(arg => arg.startsWith('--port='))
 const PORT = portArg ? parseInt(portArg.split('=')[1], 10) : 3000
@@ -49,7 +50,6 @@ const config = {
     rootDir: ROOT_DIR,
     port: PORT,
     mode: mode,
-    engine: engine,
     routeMap: routeMap
 }
 
@@ -61,11 +61,7 @@ console.log(`Port: ${PORT}`)
 // Logic Dispatcher
 if (isBuild || (isBuildAndServe && mode === 'ssg')) {
     if (mode === 'ssg') {
-        if (engine === 'bun') {
-            await buildSSGBun(config)
-        } else {
-            buildSSG(config)
-        }
+        await buildSSGBun(config)
         if (isBuild) process.exit(0)
     } else {
         console.error('Build is only supported for SSG mode.')
@@ -73,7 +69,7 @@ if (isBuild || (isBuildAndServe && mode === 'ssg')) {
     }
 }
 
-if (mode === 'ssr' && engine === 'bun') {
+if (mode === 'ssr') {
     startSSRBunServer(config)
 } else {
 
@@ -81,8 +77,6 @@ const server = http.createServer((req, res) => {
     try {
         if (mode === 'csr') {
             handleCSR(req, res, config)
-        } else if (mode === 'ssr') {
-            handleSSR(req, res, config)
         } else if (mode === 'ssg') {
             handleSSGServe(req, res, config)
         } else {

@@ -7,7 +7,7 @@ The goal was to create a **lightweight, vanilla JavaScript framework** that supp
 
 ## 2. Rendering Modes
 
-The `scripts/ltng-ui-server.js` script acts as a universal server/builder. It switches behavior based on the `--mode` flag; SSR serving and SSG builds additionally take `--engine=legacy|bun` (default `legacy`). Full CLI reference: [`../scripts/server/README.md`](../scripts/server/README.md).
+The `scripts/ltng-ui-server.js` script acts as a universal server/builder. It switches behavior based on the `--mode` flag. SSR and SSG are Bun-native (the former vm-based legacy engines were removed). Full CLI reference: [`../scripts/server/README.md`](../scripts/server/README.md).
 
 ### A. Client-Side Rendering (CSR)
 **Command**: `bun scripts/ltng-ui-server.js --mode=csr` (default mode)
@@ -19,9 +19,9 @@ The `scripts/ltng-ui-server.js` script acts as a universal server/builder. It sw
 4.  **Framework**: `Body.render()` runs, creates DOM elements, and appends them to the document.
 
 ### B. Server-Side Rendering (SSR)
-**Command**: `bun scripts/ltng-ui-server.js --mode=ssr [--engine=bun]`
+**Command**: `bun scripts/ltng-ui-server.js --mode=ssr`
 
-**How it works (both engines)**:
+**How it works**:
 1.  **Server**: Intercepts the request.
 2.  **Mock DOM**: Creates a fresh mock DOM environment (`mocks/mock-dom.js`) for *that specific request*.
 3.  **Execution**: Runs your client-side code (`ltng-ui.js`, page scripts) against the mock DOM.
@@ -30,19 +30,16 @@ The `scripts/ltng-ui-server.js` script acts as a universal server/builder. It sw
 6.  **Response**: Sends the fully populated HTML to the browser.
 7.  **Hydration**: The browser displays the content immediately. Then, the scripts run again (Auto-Hydration) to attach event listeners.
 
-**Engine differences (step 3)**:
--   **`legacy`**: scripts are regex-extracted, transpiled (`scripts/internal/transpiler.js`), and executed in a `vm.createContext` sandbox whose global object *is* the mock window.
--   **`bun`** (`scripts/server/ssr-bun.js`): served by `Bun.serve` (route-map routes + static fallback); scripts are extracted with Bun's built-in `HTMLRewriter` and executed as **native ES modules** — no vm, no transpiler. The mock DOM is installed on `globalThis` for the duration of a render, behind a render mutex.
+**Execution details (step 3)** — `scripts/server/ssr.js`: served by `Bun.serve` (route-map routes + static fallback); scripts are extracted with Bun's built-in `HTMLRewriter` and executed as **native ES modules** — no vm, no transpiler. The mock DOM is installed on `globalThis` for the duration of a render, behind a render mutex.
 
 ### C. Static Site Generation (SSG)
-**Command**: `bun scripts/ltng-ui-server.js --build --mode=ssg [--engine=bun]` (Build) / `bun scripts/ltng-ui-server.js --mode=ssg` (Serve)
+**Command**: `bun scripts/ltng-ui-server.js --build --mode=ssg` (Build) / `bun scripts/ltng-ui-server.js --mode=ssg` (Serve)
 
 **How it works**:
--   **`legacy` build**: performs the SSR process for each `.html` file, writes the result to `dist/`, and copies only the assets the pages use.
--   **`bun` build**: each `.html` file is a **Bun HTML entrypoint** — referenced scripts and stylesheets are bundled, minified, content-hashed, and path-rewritten by `bun build` itself (no pre-rendered HTML; that remains a legacy-engine feature).
--   **Serve**: identical for both engines — a static file server pointing at `dist/`.
+-   **Build**: each `.html` file is a **Bun HTML entrypoint** — referenced scripts and stylesheets are bundled, minified, content-hashed, and path-rewritten by `bun build` itself. (Pre-rendered/baked HTML is not part of SSG today; if pursued, it would build on the SSR renderer.)
+-   **Serve**: a static file server pointing at `dist/`.
 
-**Bun-engine page conventions**: Bun rewrites `<script src>` tags to deferred `type="module"` scripts, so page inline scripts must be `type="module"` too, and cross-script globals must be explicit `window.x = ...` assignments (module scripts are strict mode). Rationale and history: [`../scripts/BUN_TOOLCHAIN_PROPOSAL.md`](../scripts/BUN_TOOLCHAIN_PROPOSAL.md).
+**Page conventions**: Bun rewrites `<script src>` tags to deferred `type="module"` scripts, so page inline scripts must be `type="module"` too, and cross-script globals must be explicit `window.x = ...` assignments (module scripts are strict mode). Rationale and history: [`../scripts/BUN_TOOLCHAIN_PROPOSAL.md`](../scripts/BUN_TOOLCHAIN_PROPOSAL.md).
 
 ## 3. Key Technical Decisions
 
@@ -56,7 +53,7 @@ This "Nuke and Pave" strategy is simple and robust for this scale, ensuring the 
 ### Mock DOM (`mocks/mock-dom.js`)
 **Problem**: The server runtime doesn't have `document` or `window`.
 **Solution**: A minimal implementation of the DOM API (`createElement`, `appendChild`, `createTextNode`, etc.) purely in JS, with a `createWindow()` factory so every render gets a **brand new** DOM — if a global `document` were reused, User A's state would leak into User B's request (State Pollution).
-**Isolation models**: the legacy engine gets isolation from the vm sandbox (each render's sandbox object is its own global). The bun engine mirrors browser semantics instead — `window` *is* `globalThis` during a render — so renders are serialized through a mutex, and every property a render adds is swept afterwards.
+**Isolation model**: SSR mirrors browser semantics — `window` *is* `globalThis` during a render — so renders are serialized through a mutex, and every property a render adds is swept afterwards.
 
 ### Universal Code
 The exact same `ltng-ui.js` and page HTML run on both the server (mock DOM) and the client (browser). This is achieved by:

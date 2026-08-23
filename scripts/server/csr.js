@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import { transpile } from '../internal/transpiler.js'
 
 /**
  * Resolve a URL path against the route map.
