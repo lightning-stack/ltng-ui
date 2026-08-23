@@ -5,6 +5,7 @@ import { parseRoutesFile } from './internal/routes-parser.js'
 import handleCSR from './server/csr.js'
 import { handleSSR } from './server/ssr.js'
 import { buildSSG, buildSSGBun, handleSSGServe } from './server/ssg.js'
+import { startSSRBunServer } from './server/ssr-bun.js'
 
 // CLI Argument Parsing
 const args = process.argv.slice(2)
@@ -72,6 +73,10 @@ if (isBuild || (isBuildAndServe && mode === 'ssg')) {
     }
 }
 
+if (mode === 'ssr' && engine === 'bun') {
+    startSSRBunServer(config)
+} else {
+
 const server = http.createServer((req, res) => {
     try {
         if (mode === 'csr') {
@@ -94,3 +99,5 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running in ${mode.toUpperCase()} mode at http://0.0.0.0:${PORT}`)
 })
+
+}

@@ -129,8 +129,10 @@ serving is unchanged (`handleSSGServe`). Make targets: `example-ssg-bun`,
 tags to deferred `type="module"` scripts. Page inline scripts must therefore be
 `type="module"` too — module scripts execute in document order, so the framework
 (whose API is explicitly `window`-attached) is loaded first; classic inline scripts
-would run before it. Mock-DOM pre-rendering (baked HTML) stays a follow-up, per
-risk #5.
+would run before it. And because module scripts are strict mode, cross-script
+globals must be explicit `window.x = ...` assignments — sloppy-mode implicit
+globals (`x = ...`) throw a ReferenceError. Mock-DOM pre-rendering (baked HTML)
+stays a follow-up, per risk #5.
 
 Today `--mode=ssg --build` (`scripts/server/ssg.js`) renders pages through the
 mock-DOM/vm machinery. With Bun:
@@ -155,7 +157,41 @@ e.g. `--engine=bun`), old path kept until parity is confirmed.
 
 ---
 
-## 6. Phase 3 — SSR via `Bun.serve`
+## 6. Phase 3 — SSR via `Bun.serve` ✅ (implemented)
+
+**Status:** shipped as `--mode=ssr --engine=bun` (`scripts/server/ssr-bun.js`).
+Make targets: `example-ssr-bun`, `playground-ssr-bun`. The legacy vm-based SSR
+stays the default engine.
+
+**Design as built:**
+- `Bun.serve` with `routes` built from the parsed route map plus a fetch
+  fallback: `/` and `*.html` render server-side, extensionless clean URLs try
+  `<path>.html`, everything else is served statically via `Bun.file` with the
+  srcDir → rootDir → parent-dirs resolution the CSR handler uses.
+- Scripts are extracted with Bun's built-in `HTMLRewriter` — no regex scanning.
+- Execution is native ESM: external scripts import with a per-request
+  cache-busting query (`?ssr=N`); inline scripts are written to a temp `.mjs`
+  (relative import specifiers rewritten to absolute `file://` URLs) and imported
+  the same way. No vm sandbox, no transpiler.
+- The mock DOM is installed on `globalThis` for the duration of a render, so
+  renders are serialized through a mutex — dev/preview-server semantics,
+  matching the single-threaded guarantee of the legacy vm path.
+- Serialization mirrors the legacy path: rendered body + preserved original
+  scripts (client re-runs them → nuke-and-pave hydration), head links appended,
+  `file://` URLs rewritten to server paths.
+
+**Known limitations (documented, not hidden):** Bun's module cache ignores
+query strings and caches directory listings, so per-render re-execution is done
+by copying each script into a fresh temp directory; sub-modules a script imports
+stay cached across requests (fine for stateless framework code, a caveat for
+stateful app sub-modules). Because renders share one `globalThis`,
+`Object.defineProperty(window, ...)` calls are rerouted through a shim that
+tolerates re-definition of non-configurable properties left by earlier renders
+(e.g. ltng-ui's `Body` getter, which reads the live `document` and stays
+correct).
+SSR renders initial store state (mock `localStorage` is empty); persisted client
+state appears after hydration — that is the nuke-and-pave contract.
+`bun build --compile` standalone-binary packaging remains a follow-up.
 
 Replace the `http.createServer` + `vm.createContext` approach in
 `scripts/ltng-ui-server.js` / `scripts/server/ssr.js` with:

@@ -40,6 +40,9 @@ playground-ssg:
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --build --mode=ssg
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssg
 
+playground-ssr-bun:
+	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssr --engine=bun
+
 playground-ssg-bun:
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --build --mode=ssg --engine=bun
 	bun scripts/ltng-ui-server.js --src=playground/$(pv) --dist=dist/playground/$(pv) --port=$(port) --mode=ssg
@@ -59,6 +62,9 @@ example-ssr:
 example-ssg:
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssg
+
+example-ssr-bun:
+	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --port=$(port) --mode=ssr --engine=bun
 
 example-ssg-bun:
 	bun scripts/ltng-ui-server.js --src=examples/$(example_name) --dist=dist/examples/$(example_name) --build --mode=ssg --engine=bun
